@@ -14,8 +14,9 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
-import android.view.*;
+import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -143,6 +144,12 @@ public class MainActivity extends AnalyzableActivity
 				return true;
 			}
 		});
+		if (PreferenceUtils.useVirtualKeyOptimization())
+		{
+			int navigationHeight = (int) (48 * getResources().getDisplayMetrics().density + 0.5f);
+			this.drawerContentLayout.setPadding(this.drawerContentLayout.getPaddingLeft(), this.drawerContentLayout.getPaddingTop(),
+					this.drawerContentLayout.getPaddingRight(), navigationHeight);
+		}
 		this.pinnedList = (LinearLayout) findViewById(R.id.main_drawer_pinlist);
 		this.allList = (LinearLayout) findViewById(R.id.main_drawer_alllist);
 		inflateForumList(ForumBasicDataList.getForumBasicDataList(), this.allList);
@@ -166,11 +173,11 @@ public class MainActivity extends AnalyzableActivity
 		if (this.forumListFragment == null)
 		{
 			this.forumListFragment = new ForumListFragment();
+			this.forumListFragment.setArguments(bundle);
+			FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+			fragmentTransaction.add(R.id.activity_main, this.forumListFragment, ForumListFragment.TAG);
+			fragmentTransaction.commit();
 		}
-		this.forumListFragment.setArguments(bundle);
-		FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
-		fragmentTransaction.add(R.id.activity_main, this.forumListFragment, ForumListFragment.TAG);
-		fragmentTransaction.commit();
 
 
 		this.handler = new Handler();
@@ -178,7 +185,7 @@ public class MainActivity extends AnalyzableActivity
 		if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(this) != ConnectionResult.SUCCESS)
 		{
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
-			builder.setTitle("Google Play服务不可用").setMessage("应用需要完整的Google Play服务才能正常运行，请检查Google Play服务是否未安装或被禁用，并检查网络连接是否通畅。").setCancelable(false);
+			builder.setTitle("Google Play服务不可用").setMessage("应用需要完整的Google Play服务才能正常运行，请检查Google Play服务是否未安装或被禁用，并检查TGFC Beta是否被权限管理软件禁止访问Google Play服务。").setCancelable(false);
 			builder.setPositiveButton(R.string.text_exit, new DialogInterface.OnClickListener()
 			{
 				@Override
@@ -192,7 +199,8 @@ public class MainActivity extends AnalyzableActivity
 		else
 		{
 			//Ugly wrapper for buggy google service library.
-			if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT) {
+			if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT)
+			{
 				registerOnGoogle();
 			}
 		}
@@ -369,10 +377,12 @@ public class MainActivity extends AnalyzableActivity
 		}
 	}
 
-	public int getNavigationBarHeight() {
+	public int getNavigationBarHeight()
+	{
 		Resources resources = getResources();
 		int resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android");
-		if (resourceId > 0) {
+		if (resourceId > 0)
+		{
 			return resources.getDimensionPixelSize(resourceId);
 		}
 		return 0;
